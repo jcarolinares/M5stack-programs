@@ -11,8 +11,12 @@ void main_display();
 void ac_setup();
 
 long time_abs=0;
-long time_offset=3630000;
+long time_offset=3630000 *2;
 
+
+// AC variables
+String ac_power = "on";
+int ac_temp = 25;
 
 // IR setup
 const uint16_t kIrLed = 26; //4;  // ESP8266 GPIO pin to use. Recommended: 4 (D2).
@@ -26,22 +30,47 @@ void setup() {
   //IR setup
   ac.begin();
   main_display();
-  delay(10000);
+  delay(3000);
   ac_setup();
 }
 
 void loop() {
   M5.update();
 
-  if (M5.BtnA.wasPressed()) {
+  if (M5.BtnB.wasPressed()) {
     ac_setup();
+  }
+  else if(M5.BtnA.wasPressed()){
+    if (ac_temp >10){
+      ac_temp --;
+    }
+    ac.setTemp(ac_temp);
+    main_display();
+  }
+  else if(M5.BtnC.wasPressed()){
+    if (ac_temp <32){
+      ac_temp ++;
+    }
+    ac.setTemp(ac_temp);
+    main_display();
+  }
+  else if (M5.BtnC.pressedFor(2000)) {
+    if (ac_power == "on"){
+      ac_power = "off";
+      main_display();
+    }
+    else{
+      ac_power = "on";
+      main_display();
+    }
+  delay(500);
   }
 
   if (millis()>=(time_abs+time_offset)){
     time_abs=millis();
     ac.setCurrentTime(22 * 60 + 0);
-    ac.enableOffTimer(23 * 60 + 0);
-    ac.enableOnTimer(24 * 60 + 0);
+    ac.enableOffTimer(22 * 60 + 30);
+    ac.enableOnTimer(23 * 60 + 30);
 
     // Now send the IR signal.
     #if SEND_DAIKIN
@@ -57,17 +86,22 @@ void ac_setup(){
   M5.Lcd.setCursor(45, 150);
   M5.Lcd.println("\nSending");
   // Set up what we want to send. See ir_Daikin.cpp for all the options.
-  ac.on();
+  if (ac_power == "on"){
+    ac.on();
+  }
+  else{
+    ac.off();
+  }
   ac.setFan(kDaikinFanQuiet);
   ac.setMode(kDaikinCool);
-  ac.setTemp(25);
+  ac.setTemp(ac_temp);
   ac.setSwingVertical(false);
   ac.setSwingHorizontal(false);
 
-  // One hour working
+  // half hour working
   ac.setCurrentTime(22 * 60 + 0);
-  ac.enableOffTimer(23 * 60 + 0);
-  ac.enableOnTimer(24 * 60 + 0);
+  ac.enableOffTimer(22 * 60 + 30);
+  ac.enableOnTimer(23 * 60 + 30);
 
   // Now send the IR signal.
   #if SEND_DAIKIN
@@ -80,6 +114,7 @@ void ac_setup(){
 }
 
 void main_display(){
+  M5.Lcd.clearDisplay(ILI9341_BLACK);
   M5.Lcd.setTextSize(4);
   M5.Lcd.setCursor(50, 50);
   M5.Lcd.println("IR DAIKIN");
@@ -87,6 +122,6 @@ void main_display(){
   M5.Lcd.println("CONTROLLER ");
   M5.Lcd.setCursor(135, 150);
   M5.Lcd.println(ac.getTemp());
-  M5.Lcd.setCursor(135, 200);
-  // M5.Lcd.println(ac.getOffTime());
+  M5.Lcd.setCursor(240, 200);
+  M5.Lcd.println(ac_power);
 }
