@@ -17,6 +17,7 @@ long time_offset=3630000 *2;
 // AC variables
 String ac_power = "on";
 int ac_temp = 25;
+bool screen_on = true;
 
 // IR setup
 const uint16_t kIrLed = 26; //4;  // ESP8266 GPIO pin to use. Recommended: 4 (D2).
@@ -37,7 +38,32 @@ void setup() {
 void loop() {
   M5.update();
 
-  if (M5.BtnB.wasPressed()) {
+  if (M5.BtnC.pressedFor(1500)) {
+    if (ac_power == "on"){
+      ac_power = "off";
+      main_display();
+    }
+    else{
+      ac_power = "on";
+      main_display();
+    }
+  delay(500);
+  }
+  else if (M5.BtnA.pressedFor(1500)) {
+    if (screen_on == true){
+      M5.Lcd.sleep();
+      M5.Lcd.setBrightness(0);
+      screen_on = false;
+    }
+    else{
+      M5.Lcd.wakeup();
+      M5.Lcd.setBrightness(127);
+      screen_on = true;
+    }
+    delay(500);
+
+  }
+  else if (M5.BtnB.wasPressed()) {
     ac_setup();
   }
   else if(M5.BtnA.wasPressed()){
@@ -54,17 +80,7 @@ void loop() {
     ac.setTemp(ac_temp);
     main_display();
   }
-  else if (M5.BtnC.pressedFor(2000)) {
-    if (ac_power == "on"){
-      ac_power = "off";
-      main_display();
-    }
-    else{
-      ac_power = "on";
-      main_display();
-    }
-  delay(500);
-  }
+
 
   if (millis()>=(time_abs+time_offset)){
     time_abs=millis();
