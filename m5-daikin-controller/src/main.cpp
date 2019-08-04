@@ -1,5 +1,9 @@
 #include <Arduino.h>
 #include <M5Stack.h>
+#include "DHT12.h"
+#include <Wire.h> //The DHT12 uses I2C comunication.
+#include <Adafruit_Sensor.h>
+#include <Adafruit_BMP280.h>
 
 // IR libraries
 #include <IRremoteESP8266.h>
@@ -8,11 +12,15 @@
 
 // Functions
 void main_display();
+void temp_display();
 void ac_setup();
 
 long time_abs=0;
 long time_offset=3630000 *2;
-
+float tmp = 0;
+bool temp_flag= false;
+float hum = 0;
+float pressure = 0;
 
 // AC variables
 String ac_power = "on";
@@ -23,9 +31,18 @@ bool screen_on = true;
 const uint16_t kIrLed = 26; //4;  // ESP8266 GPIO pin to use. Recommended: 4 (D2).
 IRDaikinESP ac(kIrLed);  // Set the GPIO to be used to sending the message
 
+// Env setup
+DHT12 dht12;
+Adafruit_BMP280 bme;
+
 void setup() {
   time_abs=millis();
   M5.begin();
+  Wire.begin();
+  while (!bme.begin(0x76)){
+    Serial.println("Could not find a valid BMP280 sensor, check wiring!");
+    M5.Lcd.println("Could not find a valid BMP280 sensor, check wiring!");
+  }
   Serial.begin(115200);
 
   //IR setup
@@ -37,6 +54,13 @@ void setup() {
 
 void loop() {
   M5.update();
+
+  //Env readings
+  tmp = dht12.readTemperature();
+  temp_display();
+  // hum = dht12.readHumidity();
+  // pressure = bme.readPressure();
+  // Serial.printf("Temperatura: %2.2f*C  Humedad: %0.2f%%  \r\n", tmp, hum);
 
   if (M5.BtnC.pressedFor(1500)) {
     if (ac_power == "on"){
@@ -94,6 +118,23 @@ void loop() {
     #endif  // SEND_DAIKIN
   }
 
+  if (tmp>=29.5 && temp_flag == false){
+    delay(5000);
+    temp_flag = true;
+    ac_power = "on";
+    time_abs=millis();
+    ac_setup();
+    // Now send the IR signal.
+    #if SEND_DAIKIN
+      ac.send();
+    #endif  // SEND_DAIKIN
+    Serial.println("DONE");
+  }
+
+  else if (tmp<=28.5 && temp_flag == true){
+    temp_flag = false;
+  }
+
   delay(100);
 }
 
@@ -137,7 +178,16 @@ void main_display(){
   M5.Lcd.setCursor(45, 100);
   M5.Lcd.println("CONTROLLER ");
   M5.Lcd.setCursor(135, 150);
-  M5.Lcd.println(ac.getTemp());
+  temp_display(); //Temp display
   M5.Lcd.setCursor(240, 200);
   M5.Lcd.println(ac_power);
+}
+
+void temp_display()
+{
+  M5.Lcd.setCursor(55, 150);
+  M5.Lcd.print(tmp);
+  M5.Lcd.print("->");
+  M5.Lcd.println(ac.getTemp());
+  // M5.Lcd.printf("Temp: %2.1f", tmp);
 }
