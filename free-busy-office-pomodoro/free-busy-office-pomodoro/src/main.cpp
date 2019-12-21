@@ -8,6 +8,7 @@ MPU9250 IMU; // new a MPU9250 object
 void free_state();
 void busy_state();
 void lunch_state();
+void pomodoro_state();
 
 // Global variables
 int state = 0;
@@ -60,11 +61,11 @@ if (IMU.readByte(MPU9250_ADDRESS, INT_STATUS) & 0x01)
 
 
 // State machine transitions
-if (state != 1 && state!= 3 && IMU.ay > acc_th) {
+if (state != 1 && state!= 3 && state!= 4  && IMU.ay > acc_th) {
   state = 1;
   free_state();
 }
-else if (state != 2 && state!= 3 && IMU.ay < -acc_th) {
+else if (state != 2 && state!= 3 && state!= 4 && IMU.ay < -acc_th) {
   state = 2;
   busy_state();
 }
@@ -77,6 +78,16 @@ else if(M5.BtnA.wasPressed()){
     state =0;
   }
   lunch_state();
+}
+else if(M5.BtnB.wasPressed()){
+  if(state!= 4){
+    state = 4;
+  }
+  else
+  {
+    state =0;
+  }
+  pomodoro_state();
 }
 
 }
@@ -103,4 +114,10 @@ void lunch_state(){
   M5.Lcd.setCursor(60,90);
   M5.Lcd.setTextColor(YELLOW);
   M5.Lcd.print("LUNCH");
+}
+
+void pomodoro_state(){
+  M5.Lcd.clear();
+  M5.Lcd.setRotation(1);
+  M5.Lcd.fillScreen(RED);
 }
