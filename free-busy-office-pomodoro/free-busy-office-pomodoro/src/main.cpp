@@ -1,6 +1,33 @@
+/**
+
+M5 Stack OFFICE TOOL
+* Free-BUSY Indicator
+* Lunch Indicator
+* Pomodoro timer
+
+Made by Julián Caro Linares
+jcarolinares@gmail.com
+@jcarolinares
+
+CC-BY-SA
+
+Acknowledgments and Attributions
+The LED bar control is based on the code done by G4lileo in the project
+ESP32-WiFi-Hash-Monster: https://github.com/G4lile0/ESP32-WiFi-Hash-Monster
+
+**/
+
 #include <Arduino.h>
 #include <M5Stack.h>
 #include "utility/MPU9250.h"
+
+#ifdef ARDUINO_M5STACK_FIRE
+  #include <FastLED.h>
+  #define M5STACK_FIRE_NEO_NUM_LEDS 10
+  #define M5STACK_FIRE_NEO_DATA_PIN 15
+  // Define the array of leds
+  CRGB leds[M5STACK_FIRE_NEO_NUM_LEDS];
+#endif
 
 MPU9250 IMU; // new a MPU9250 object
 
@@ -11,8 +38,13 @@ void lunch_state();
 void pomodoro_state();
 
 // Global variables
-int state = 0;
 int acc_th = 0.4;
+unsigned int bright = 100;  // default
+unsigned int bright_leds = 5;  // default
+unsigned int led_status = 0;
+unsigned int ledPacketCounter = 0;
+
+int state = 0;
 /**
 States:
 0->Idle
@@ -22,8 +54,16 @@ States:
 4->Pomodoro
 **/
 
+
 // the setup routine runs once when M5Stack starts up
 void setup(){
+
+  #ifdef ARDUINO_M5STACK_FIRE
+    // load these before M5.begin() so they can eventually be turned off
+    FastLED.addLeds<WS2812B, M5STACK_FIRE_NEO_DATA_PIN, GRB>(leds, M5STACK_FIRE_NEO_NUM_LEDS);
+    FastLED.clear();
+    FastLED.show();
+  #endif
 
   // Initialize the M5Stack object
   M5.begin();
@@ -38,6 +78,7 @@ void setup(){
   */
   M5.Power.begin();
   M5.Lcd.setTextSize(10);
+
 }
 
 // the loop routine runs over and over again forever
@@ -98,6 +139,13 @@ void free_state(){
   M5.Lcd.setCursor(75,90);
   M5.Lcd.setTextColor(GREEN);
   M5.Lcd.print("FREE");
+
+  #ifdef ARDUINO_M5STACK_FIRE
+    for (int pixelNumber = 0; pixelNumber < 10; pixelNumber++){
+      leds[pixelNumber].setRGB( 0, bright_leds, 0);;
+    }
+    FastLED.show();
+  #endif
 }
 
 void busy_state(){
@@ -106,6 +154,13 @@ void busy_state(){
   M5.Lcd.setCursor(75,90);
   M5.Lcd.setTextColor(RED);
   M5.Lcd.print("BUSY");
+
+  #ifdef ARDUINO_M5STACK_FIRE
+    for (int pixelNumber = 0; pixelNumber < 10; pixelNumber++){
+      leds[pixelNumber].setRGB( bright_leds, 0, 0);;
+    }
+    FastLED.show();
+  #endif
 }
 
 void lunch_state(){
@@ -114,10 +169,24 @@ void lunch_state(){
   M5.Lcd.setCursor(60,90);
   M5.Lcd.setTextColor(YELLOW);
   M5.Lcd.print("LUNCH");
+
+  #ifdef ARDUINO_M5STACK_FIRE
+    for (int pixelNumber = 0; pixelNumber < 10; pixelNumber++){
+      leds[pixelNumber].setRGB( bright_leds, bright_leds, 0);;
+    }
+    FastLED.show();
+  #endif
 }
 
 void pomodoro_state(){
   M5.Lcd.clear();
   M5.Lcd.setRotation(1);
   M5.Lcd.fillScreen(RED);
+
+  #ifdef ARDUINO_M5STACK_FIRE
+    for (int pixelNumber = 0; pixelNumber < 10; pixelNumber++){
+      leds[pixelNumber].setRGB( bright_leds, 0, 0);;
+    }
+    FastLED.show();
+  #endif
 }
