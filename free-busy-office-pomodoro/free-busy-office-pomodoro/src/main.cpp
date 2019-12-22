@@ -21,6 +21,8 @@ ESP32-WiFi-Hash-Monster: https://github.com/G4lile0/ESP32-WiFi-Hash-Monster
 #include <M5Stack.h>
 #include "utility/MPU9250.h"
 #include <Ticker.h>
+#include <WiFi.h>
+#include <HTTPClient.h>
 
 #ifdef ARDUINO_M5STACK_FIRE
   #include <FastLED.h>
@@ -33,7 +35,9 @@ ESP32-WiFi-Hash-Monster: https://github.com/G4lile0/ESP32-WiFi-Hash-Monster
 // The screen is 320 x 240 pixels
 #define LCD_MAX_X 320
 #define LCD_MAX_Y 240
-
+#define IFTTT_URL "YOUR IFTTT REQUEST URL"
+#define WIFI_SSID "SSID"
+#define WIFI_PASSWORD "PASSWORD"
 
 MPU9250 IMU; // new a MPU9250 object
 
@@ -45,6 +49,7 @@ void busy_state();
 void lunch_state();
 void pomodoro_state();
 void callback_pomodoro();
+int create_calendar_event();
 
 // Global variables
 int acc_th = 0.4;
@@ -53,7 +58,7 @@ unsigned int bright_leds = 5;  // default
 unsigned int led_status = 0;
 unsigned int ledPacketCounter = 0;
 unsigned long pomodoro_time = 0;
-int pomodoro_minutes = 1;
+int pomodoro_minutes = 20;
 
 int state = 0;
 /**
@@ -63,6 +68,7 @@ States:
 2->Busy
 3->Lunch
 4->Pomodoro
+5->Create calendar event
 **/
 
 
@@ -89,6 +95,26 @@ void setup(){
   */
   M5.Power.begin();
   M5.Lcd.setTextSize(10);
+
+  //Wifi connection
+  Serial.begin(115200);
+  delay(10);
+  Serial.print("Connecting");
+  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+  while (WiFi.status() != WL_CONNECTED) {
+      delay(100);
+      Serial.print(".");
+  }
+
+  if(WiFi.status()== WL_CONNECTED){
+    Serial.println("");
+    Serial.println("WiFi connected");
+    Serial.println("IP address: ");
+    Serial.println(WiFi.localIP());
+  }
+  else{
+    Serial.println("Not connected- Working without WIFI");
+  }
 }
 
 // the loop routine runs over and over again forever
@@ -101,13 +127,6 @@ if (IMU.readByte(MPU9250_ADDRESS, INT_STATUS) & 0x01)
   IMU.readAccelData(IMU.accelCount);
   IMU.getAres(); // get accelerometer scales saved to "aRes"
   IMU.ay = (float)IMU.accelCount[1] * IMU.aRes; // - accelBias[1];
-  // M5.Lcd.print("Y-acceleration: "); M5.Lcd.print(1000 * IMU.ay);
-  // M5.Lcd.clear();
-  // M5.Lcd.setCursor(0, 0);
-  // M5.Lcd.print("Y-acceleration: ");
-  // M5.Lcd.print(IMU.ay);
-
-  // M5.Lcd.println(" mg ");
 }
 
 
@@ -134,6 +153,16 @@ else if(M5.BtnB.wasPressed()){
   if(state!= 4){
     state = 4;
     pomodoro_state();
+  }
+  else
+  {
+    state =0;
+  }
+}
+else if(M5.BtnC.wasPressed()){
+  if(state!= 5){
+    state = 5;
+    create_calendar_event();
   }
   else
   {
@@ -227,4 +256,55 @@ void pomodoro_state(){
     }
     FastLED.show();
   #endif
+}
+
+int create_calendar_event(){
+  M5.Lcd.clear();
+  M5.Lcd.setRotation(1);
+  M5.Lcd.setCursor(15,90);
+  M5.Lcd.setTextColor(YELLOW);
+  M5.Lcd.print("BOOKING");
+
+  #ifdef ARDUINO_M5STACK_FIRE
+    for (int pixelNumber = 0; pixelNumber < 10; pixelNumber++){
+      leds[pixelNumber].setRGB( bright_leds, bright_leds, 0);
+    }
+    FastLED.show();
+  #endif
+
+  if(WiFi.status()== WL_CONNECTED){   //Check WiFi connection status
+
+     HTTPClient http;
+     http.begin(IFTTT_URL); //Specify destination for HTTP request
+     http.addHeader("Content-Type", "text/plain"); //Specify content-type header
+
+     int httpResponseCode = http.POST("post");   //Send the actual POST request
+
+     if(httpResponseCode>0){
+
+      Serial.println(httpResponseCode);   //Print return code
+      M5.Lcd.clear();
+      M5.Lcd.setCursor(40,90);
+      M5.Lcd.setTextColor(GREEN);
+      M5.Lcd.print("BOOKED");
+      delay(3000);
+      return httpResponseCode;
+     }else{
+
+      Serial.print("Error on sending request: ");
+      Serial.println(httpResponseCode);
+      M5.Lcd.clear();
+      M5.Lcd.setCursor(40,90);
+      M5.Lcd.setTextColor(RED);
+      M5.Lcd.print("ERROR");
+      return httpResponseCode;
+
+     }
+
+     http.end();  //Free resources
+  }
+  else{
+    Serial.println("Connection error");
+    return -1;
+  }
 }
