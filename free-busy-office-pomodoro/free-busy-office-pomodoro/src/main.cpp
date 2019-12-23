@@ -35,7 +35,7 @@ ESP32-WiFi-Hash-Monster: https://github.com/G4lile0/ESP32-WiFi-Hash-Monster
 // The screen is 320 x 240 pixels
 #define LCD_MAX_X 320
 #define LCD_MAX_Y 240
-#define IFTTT_URL "YOUR IFTTT REQUEST URL"
+#define IFTTT_URL "WEBHOOK IFTTT_URL"
 #define WIFI_SSID "SSID"
 #define WIFI_PASSWORD "PASSWORD"
 
@@ -94,6 +94,11 @@ void setup(){
     If used battery, please call this function in your project
   */
   M5.Power.begin();
+
+  // Set up and turn off the speaker output to avoid most of the anoying sounds
+  pinMode(25, OUTPUT);
+  M5.Speaker.mute();
+
   M5.Lcd.setTextSize(10);
 
   //Wifi connection
@@ -119,7 +124,6 @@ void setup(){
 
 // the loop routine runs over and over again forever
 void loop() {
-
 M5.update();
 
 if (IMU.readByte(MPU9250_ADDRESS, INT_STATUS) & 0x01)
