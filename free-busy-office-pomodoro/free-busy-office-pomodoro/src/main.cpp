@@ -35,7 +35,7 @@ ESP32-WiFi-Hash-Monster: https://github.com/G4lile0/ESP32-WiFi-Hash-Monster
 // The screen is 320 x 240 pixels
 #define LCD_MAX_X 320
 #define LCD_MAX_Y 240
-#define IFTTT_URL "WEBHOOK IFTTT_URL"
+#define IFTTT_URL "WEBHOOK URL"
 #define WIFI_SSID "SSID"
 #define WIFI_PASSWORD "PASSWORD"
 
@@ -151,6 +151,7 @@ else if(M5.BtnA.wasPressed()){
   else
   {
     state =0;
+    Serial.println("unlock");
   }
 }
 else if(M5.BtnB.wasPressed()){
@@ -219,6 +220,8 @@ void lunch_state(){
     }
     FastLED.show();
   #endif
+
+  Serial.println("lock"); //Serial command to PC external scripts -> \r\n
 }
 
 void pomodoro_state(){
