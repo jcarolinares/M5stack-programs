@@ -28,7 +28,7 @@ int ac_temp = 25;
 bool screen_on = true;
 
 // IR setup
-const uint16_t kIrLed = 26; //4;  // ESP8266 GPIO pin to use. Recommended: 4 (D2).
+const uint16_t kIrLed = 26; // M5 Stack bottom port B // ESP8266 GPIO pin to use. Recommended: 4 (D2).
 IRDaikinESP ac(kIrLed);  // Set the GPIO to be used to sending the message
 
 // Env setup
@@ -40,8 +40,8 @@ void setup() {
   M5.begin();
   Wire.begin();
   while (!bme.begin(0x76)){
-    Serial.println("Could not find a valid BMP280 sensor, check wiring!");
-    M5.Lcd.println("Could not find a valid BMP280 sensor, check wiring!");
+    Serial.println("Could not find a valid BMP280 sensor on port A");
+    M5.Lcd.println("Could not find a valid BMP280 sensor on port A");
   }
   Serial.begin(115200);
 
