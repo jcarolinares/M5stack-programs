@@ -4,11 +4,22 @@
 #include <Wire.h> //The DHT12 uses I2C comunication.
 #include <Adafruit_Sensor.h>
 #include <Adafruit_BMP280.h>
+#include <WiFi.h>
+#include <HTTPClient.h>
 
 // IR libraries
 #include <IRremoteESP8266.h>
 #include <IRsend.h>
 #include <ir_Daikin.h>
+
+// Led M5stack fire library
+#ifdef ARDUINO_M5STACK_FIRE
+  #include <FastLED.h>
+  #define M5STACK_FIRE_NEO_NUM_LEDS 10
+  #define M5STACK_FIRE_NEO_DATA_PIN 15
+  // Define the array of leds
+  CRGB leds[M5STACK_FIRE_NEO_NUM_LEDS];
+#endif
 
 // Functions
 void main_display();
@@ -36,9 +47,30 @@ DHT12 dht12;
 Adafruit_BMP280 bme;
 
 void setup() {
+
+  #ifdef ARDUINO_M5STACK_FIRE
+    // load these before M5.begin() so they can eventually be turned off
+    FastLED.addLeds<WS2812B, M5STACK_FIRE_NEO_DATA_PIN, GRB>(leds, M5STACK_FIRE_NEO_NUM_LEDS);
+    FastLED.clear();
+    FastLED.show();
+  #endif
+
+  /*
+    Power chip connected to gpio21, gpio22, I2C device
+    Set battery charging voltage and current
+    If used battery, please call this function in your project
+  */
+
+
   time_abs=millis();
   M5.begin();
   Wire.begin();
+  M5.Power.begin();
+  
+  // Set up and turn off the speaker output to avoid most of the anoying sounds
+  pinMode(25, OUTPUT);
+  M5.Speaker.mute();
+
   while (!bme.begin(0x76)){
     Serial.println("Could not find a valid BMP280 sensor on port A");
     M5.Lcd.println("Could not find a valid BMP280 sensor on port A");
@@ -62,6 +94,7 @@ void loop() {
   // pressure = bme.readPressure();
   // Serial.printf("Temperatura: %2.2f*C  Humedad: %0.2f%%  \r\n", tmp, hum);
 
+  // Buttons behaviour
   if (M5.BtnC.pressedFor(1500)) {
     if (ac_power == "on"){
       ac_power = "off";
@@ -105,7 +138,7 @@ void loop() {
     main_display();
   }
 
-
+  // Timer behaviour
   if (millis()>=(time_abs+time_offset)){
     time_abs=millis();
     ac.setCurrentTime(22 * 60 + 0);
@@ -118,6 +151,7 @@ void loop() {
     #endif  // SEND_DAIKIN
   }
 
+  // Too hot behaviour
   if (tmp>=29.5 && temp_flag == false){
     delay(5000);
     temp_flag = true;
