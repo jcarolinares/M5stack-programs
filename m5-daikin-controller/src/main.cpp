@@ -46,6 +46,9 @@ IRDaikinESP ac(kIrLed);  // Set the GPIO to be used to sending the message
 DHT12 dht12;
 Adafruit_BMP280 bme;
 
+#ifdef ARDUINO_M5STACK_FIRE
+  int led_bright = 5;
+#endif
 void setup() {
 
   #ifdef ARDUINO_M5STACK_FIRE
@@ -152,10 +155,10 @@ void loop() {
   }
 
   // Too hot behaviour
-  if (tmp>=29.5 && temp_flag == false){
+  if (tmp>=30 && temp_flag == false){
     delay(5000);
     temp_flag = true;
-    ac_power = "on";
+    // ac_power = "on"; // Commented this, it can result in not desiderable beaviours as AC on with the windows open
     time_abs=millis();
     ac_setup();
     // Now send the IR signal.
@@ -224,4 +227,37 @@ void temp_display()
   M5.Lcd.print("->");
   M5.Lcd.println(ac.getTemp());
   // M5.Lcd.printf("Temp: %2.1f", tmp);
+  
+  #ifdef ARDUINO_M5STACK_FIRE
+
+    if (tmp< 26)
+    {
+      for (int pixelNumber = 0; pixelNumber < 5; pixelNumber++){ // Right Led bar
+        leds[pixelNumber].setRGB( 0, 0, led_bright);
+      }
+    }
+    else if (tmp < 28)
+    {
+      for (int pixelNumber = 0; pixelNumber < 10; pixelNumber++){ // Right Led bar
+        leds[pixelNumber].setRGB( 0, led_bright, 0);
+      }
+    }
+    else if (tmp < 30)
+    {
+      for (int pixelNumber = 0; pixelNumber < 10; pixelNumber++){ // Right Led bar
+        leds[pixelNumber].setRGB( led_bright, led_bright, 0);
+      }
+    }
+    else{
+      for (int pixelNumber = 0; pixelNumber < 10; pixelNumber++){ // Right Led bar
+        leds[pixelNumber].setRGB( led_bright, 0, 0);
+      }   
+    }
+    
+    
+
+
+
+    FastLED.show();
+  #endif
 }
