@@ -32,6 +32,7 @@ float tmp = 0;
 bool temp_flag= false;
 float hum = 0;
 float pressure = 0;
+float hot_threshold = 28;
 
 // AC variables
 String ac_power = "on";
@@ -48,6 +49,7 @@ Adafruit_BMP280 bme;
 
 #ifdef ARDUINO_M5STACK_FIRE
   int led_bright = 5;
+  bool leds_on = true;
 #endif
 void setup() {
 
@@ -95,17 +97,16 @@ void loop() {
   temp_display();
   // hum = dht12.readHumidity();
   // pressure = bme.readPressure();
-  // Serial.printf("Temperatura: %2.2f*C  Humedad: %0.2f%%  \r\n", tmp, hum);
-
+  
   // Buttons behaviour
   if (M5.BtnC.pressedFor(1500)) {
     if (ac_power == "on"){
       ac_power = "off";
+
       main_display();
     }
     else{
       ac_power = "on";
-      main_display();
     }
   delay(500);
   }
@@ -114,11 +115,20 @@ void loop() {
       M5.Lcd.sleep();
       M5.Lcd.setBrightness(0);
       screen_on = false;
+      #ifdef ARDUINO_M5STACK_FIRE
+        leds_on = false;
+        FastLED.clear();
+        FastLED.show();
+      #endif
     }
     else{
       M5.Lcd.wakeup();
       M5.Lcd.setBrightness(127);
       screen_on = true;
+      #ifdef ARDUINO_M5STACK_FIRE
+        leds_on = true;
+        main_display();
+      #endif
     }
     delay(500);
 
@@ -155,7 +165,7 @@ void loop() {
   }
 
   // Too hot behaviour
-  if (tmp>=30 && temp_flag == false){
+  if (tmp>=hot_threshold && temp_flag == false){
     delay(5000);
     temp_flag = true;
     // ac_power = "on"; // Commented this, it can result in not desiderable beaviours as AC on with the windows open
@@ -168,7 +178,7 @@ void loop() {
     Serial.println("DONE");
   }
 
-  else if (tmp<=28.5 && temp_flag == true){
+  else if (tmp<=hot_threshold -2 && temp_flag == true){
     temp_flag = false;
   }
 
@@ -229,35 +239,32 @@ void temp_display()
   // M5.Lcd.printf("Temp: %2.1f", tmp);
   
   #ifdef ARDUINO_M5STACK_FIRE
-
-    if (tmp< 26)
+    if (leds_on == true)
     {
-      for (int pixelNumber = 0; pixelNumber < 5; pixelNumber++){ // Right Led bar
-        leds[pixelNumber].setRGB( 0, 0, led_bright);
+      if (tmp< hot_threshold - 4)
+      {
+        for (int pixelNumber = 0; pixelNumber < 5; pixelNumber++){ // Right Led bar
+          leds[pixelNumber].setRGB( 0, 0, led_bright);
+        }
       }
-    }
-    else if (tmp < 28)
-    {
-      for (int pixelNumber = 0; pixelNumber < 10; pixelNumber++){ // Right Led bar
-        leds[pixelNumber].setRGB( 0, led_bright, 0);
+      else if (tmp < hot_threshold -2)
+      {
+        for (int pixelNumber = 0; pixelNumber < 10; pixelNumber++){ // Right Led bar
+          leds[pixelNumber].setRGB( 0, led_bright, 0);
+        }
       }
-    }
-    else if (tmp < 30)
-    {
-      for (int pixelNumber = 0; pixelNumber < 10; pixelNumber++){ // Right Led bar
-        leds[pixelNumber].setRGB( led_bright, led_bright, 0);
+      else if (tmp < hot_threshold)
+      {
+        for (int pixelNumber = 0; pixelNumber < 10; pixelNumber++){ // Right Led bar
+          leds[pixelNumber].setRGB( led_bright, led_bright, 0);
+        }
       }
+      else{
+        for (int pixelNumber = 0; pixelNumber < 10; pixelNumber++){ // Right Led bar
+          leds[pixelNumber].setRGB( led_bright, 0, 0);
+        }   
+      }
+      FastLED.show();
     }
-    else{
-      for (int pixelNumber = 0; pixelNumber < 10; pixelNumber++){ // Right Led bar
-        leds[pixelNumber].setRGB( led_bright, 0, 0);
-      }   
-    }
-    
-    
-
-
-
-    FastLED.show();
   #endif
 }

@@ -6,7 +6,6 @@
         {
             "name": "Linux",
             "includePath": [
-                "/home/jcarolinares/.platformio/packages/tool-unity",
                 "/home/jcarolinares/M5stack-programs/m5-daikin-controller/lib/DTH12",
                 "/home/jcarolinares/.platformio/lib/Adafruit BMP280 Library_ID528",
                 "/home/jcarolinares/.platformio/lib/Adafruit Unified Sensor_ID31",
@@ -18,9 +17,9 @@
                 "/home/jcarolinares/.platformio/packages/framework-arduinoespressif32/libraries/HTTPClient/src",
                 "/home/jcarolinares/.platformio/packages/framework-arduinoespressif32/libraries/WiFiClientSecure/src",
                 "/home/jcarolinares/.platformio/packages/framework-arduinoespressif32/libraries/WiFi/src",
-                "/home/jcarolinares/.platformio/packages/framework-arduinoespressif32/libraries/Wire/src",
                 "/home/jcarolinares/.platformio/packages/framework-arduinoespressif32/libraries/SPIFFS/src",
                 "/home/jcarolinares/.platformio/packages/framework-arduinoespressif32/libraries/FS/src",
+                "/home/jcarolinares/.platformio/packages/framework-arduinoespressif32/libraries/Wire/src",
                 "/home/jcarolinares/.platformio/lib/M5Atom_ID3113/src",
                 "/home/jcarolinares/.platformio/lib/TTGO TWatch Library_ID6875/src",
                 "/home/jcarolinares/.platformio/packages/framework-arduinoespressif32/libraries/ArduinoOTA/src",
@@ -101,12 +100,12 @@
                 "/home/jcarolinares/.platformio/packages/framework-arduinoespressif32/tools/sdk/include/fb_gfx",
                 "/home/jcarolinares/.platformio/packages/framework-arduinoespressif32/cores/esp32",
                 "/home/jcarolinares/.platformio/packages/framework-arduinoespressif32/variants/m5stack_fire",
+                "/home/jcarolinares/.platformio/packages/tool-unity",
                 ""
             ],
             "browse": {
                 "limitSymbolsToIncludedHeaders": true,
                 "path": [
-                    "/home/jcarolinares/.platformio/packages/tool-unity",
                     "/home/jcarolinares/M5stack-programs/m5-daikin-controller/lib/DTH12",
                     "/home/jcarolinares/.platformio/lib/Adafruit BMP280 Library_ID528",
                     "/home/jcarolinares/.platformio/lib/Adafruit Unified Sensor_ID31",
@@ -118,9 +117,9 @@
                     "/home/jcarolinares/.platformio/packages/framework-arduinoespressif32/libraries/HTTPClient/src",
                     "/home/jcarolinares/.platformio/packages/framework-arduinoespressif32/libraries/WiFiClientSecure/src",
                     "/home/jcarolinares/.platformio/packages/framework-arduinoespressif32/libraries/WiFi/src",
-                    "/home/jcarolinares/.platformio/packages/framework-arduinoespressif32/libraries/Wire/src",
                     "/home/jcarolinares/.platformio/packages/framework-arduinoespressif32/libraries/SPIFFS/src",
                     "/home/jcarolinares/.platformio/packages/framework-arduinoespressif32/libraries/FS/src",
+                    "/home/jcarolinares/.platformio/packages/framework-arduinoespressif32/libraries/Wire/src",
                     "/home/jcarolinares/.platformio/lib/M5Atom_ID3113/src",
                     "/home/jcarolinares/.platformio/lib/TTGO TWatch Library_ID6875/src",
                     "/home/jcarolinares/.platformio/packages/framework-arduinoespressif32/libraries/ArduinoOTA/src",
@@ -201,6 +200,7 @@
                     "/home/jcarolinares/.platformio/packages/framework-arduinoespressif32/tools/sdk/include/fb_gfx",
                     "/home/jcarolinares/.platformio/packages/framework-arduinoespressif32/cores/esp32",
                     "/home/jcarolinares/.platformio/packages/framework-arduinoespressif32/variants/m5stack_fire",
+                    "/home/jcarolinares/.platformio/packages/tool-unity",
                     ""
                 ]
             },
