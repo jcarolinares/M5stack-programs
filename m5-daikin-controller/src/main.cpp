@@ -72,7 +72,7 @@ void setup() {
   Wire.begin();
   M5.Power.begin();
   
-  // Set up and turn off the speaker output to avoid most of the anoying sounds
+  // Set up and turn off the speaker output to avoid most of the annoying sounds
   pinMode(25, OUTPUT);
   M5.Speaker.mute();
 
