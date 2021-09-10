@@ -23,6 +23,12 @@ ESP32-WiFi-Hash-Monster: https://github.com/G4lile0/ESP32-WiFi-Hash-Monster
 #include <Ticker.h>
 #include <WiFi.h>
 #include <HTTPClient.h>
+#include <WebServer.h>
+#include <ArduinoJson.h>
+
+// Web server running on port 80
+WebServer server(80);
+
 
 #ifdef ARDUINO_M5STACK_FIRE
   #include <FastLED.h>
@@ -36,8 +42,8 @@ ESP32-WiFi-Hash-Monster: https://github.com/G4lile0/ESP32-WiFi-Hash-Monster
 #define LCD_MAX_X 320
 #define LCD_MAX_Y 240
 #define IFTTT_URL "WEBHOOK URL"
-#define WIFI_SSID "SSID"
-#define WIFI_PASSWORD "PASSWORD"
+#define WIFI_SSID "YOUR SSID"
+#define WIFI_PASSWORD "YOUR PASSWORD"
 
 MPU9250 IMU; // new a MPU9250 object
 
@@ -50,6 +56,11 @@ void lunch_state();
 void pomodoro_state();
 void callback_pomodoro();
 int create_calendar_event();
+void getState();
+void create_json(char *tag, float value, char *unit);
+void handle_post_state();
+
+
 
 // Global variables
 int acc_th = 0.4;
@@ -60,7 +71,13 @@ unsigned int ledPacketCounter = 0;
 unsigned long pomodoro_time = 0;
 int pomodoro_minutes = 20;
 
+// JSON data buffer
+StaticJsonDocument<250> jsonDocument;
+char buffer[250];
+
 int state = 0;
+int stored_state = 0; // Used for getting the state data after a REST request
+bool rest_state = false;
 /**
 States:
 0->Idle
@@ -69,6 +86,7 @@ States:
 3->Lunch
 4->Pomodoro
 5->Create calendar event
+11-> Rest idle
 **/
 
 
@@ -116,16 +134,26 @@ void setup(){
     Serial.println("WiFi connected");
     Serial.println("IP address: ");
     Serial.println(WiFi.localIP());
+
+    // Webserver for rest requests
+    server.on("/state", getState);
+    server.on("/set_state", HTTP_POST, handle_post_state);
+    // start server
+    server.begin();
+    Serial.println("Server ON");
+
   }
   else{
     Serial.println("Not connected- Working without WIFI");
   }
 }
 
-// the loop routine runs over and over again forever
+
 void loop() {
 M5.update();
+server.handleClient();
 
+// IMU reading
 if (IMU.readByte(MPU9250_ADDRESS, INT_STATUS) & 0x01)
 {
   IMU.readAccelData(IMU.accelCount);
@@ -133,6 +161,8 @@ if (IMU.readByte(MPU9250_ADDRESS, INT_STATUS) & 0x01)
   IMU.ay = (float)IMU.accelCount[1] * IMU.aRes; // - accelBias[1];
 }
 
+
+if (rest_state == false){
 
 // State machine transitions
 if (state != 1 && state!= 3 && state!= 4  && IMU.ay > acc_th) {
@@ -150,6 +180,7 @@ else if(M5.BtnA.wasPressed()){
   }
   else
   {
+    stored_state = state;
     state =0;
     Serial.println("unlock");
   }
@@ -161,6 +192,7 @@ else if(M5.BtnB.wasPressed()){
   }
   else
   {
+    stored_state = state;
     state =0;
   }
 }
@@ -171,11 +203,39 @@ else if(M5.BtnC.wasPressed()){
   }
   else
   {
+    stored_state = state;
     state =0;
   }
 }
 
 }
+
+else {  // State machine transitions for API rest control
+  if (state == 1 ) {
+    stored_state = state;
+    state = 11;
+    free_state();
+  }
+  else if (state == 2) {
+    stored_state = state;
+    state = 11;
+    busy_state();
+  }
+  else if(state == 3){
+    stored_state = state;
+    state = 11;
+    lunch_state();
+  }
+  else if(state == 4){
+    stored_state = state;
+    state = 11;  
+    pomodoro_state();
+  }
+}
+
+}
+
+
 
 void free_state(){
   M5.Lcd.clear();
@@ -279,17 +339,17 @@ int create_calendar_event(){
     FastLED.show();
   #endif
 
-  if(WiFi.status()== WL_CONNECTED){   //Check WiFi connection status
+  if(WiFi.status()== WL_CONNECTED){   // Check WiFi connection status
 
      HTTPClient http;
-     http.begin(IFTTT_URL); //Specify destination for HTTP request
+     http.begin(IFTTT_URL); // Specify destination for HTTP request
      http.addHeader("Content-Type", "text/plain"); //Specify content-type header
 
-     int httpResponseCode = http.POST("post");   //Send the actual POST request
+     int httpResponseCode = http.POST("post");   // Send the actual POST request
 
      if(httpResponseCode>0){
 
-      Serial.println(httpResponseCode);   //Print return code
+      Serial.println(httpResponseCode);   // Print return code
       M5.Lcd.clear();
       M5.Lcd.setCursor(40,90);
       M5.Lcd.setTextColor(GREEN);
@@ -315,3 +375,47 @@ int create_calendar_event(){
     return -1;
   }
 }
+
+// The M5 receive a busy signal from another device and change to busy
+
+void getState() {
+  if (state == 0)
+  {
+    Serial.println("State");
+    create_json("State", stored_state, "");
+    server.send(200, "application/json", buffer);   
+  }
+  else
+  {
+    Serial.println("State");
+    create_json("State", state, "");
+    server.send(200, "application/json", buffer);     
+  }
+  
+}
+
+void create_json(char *tag, float value, char *unit) { 
+  jsonDocument.clear(); 
+  jsonDocument["type"] = tag;
+  jsonDocument["value"] = value;
+  jsonDocument["unit"] = unit;
+  serializeJson(jsonDocument, buffer);
+  Serial.println("Buffer:");
+  Serial.println(buffer);  
+}
+
+void handle_post_state() {
+  if (server.hasArg("plain") == false) {
+    //handle error here
+  }
+  String body = server.arg("plain");
+  deserializeJson(jsonDocument, body);
+
+  state = jsonDocument["state"];
+  rest_state = true;
+
+  // Respond to the client
+  server.send(200, "application/json", "{State changed TEST}");
+  Serial.println(state);  
+}
+
